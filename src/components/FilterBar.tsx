@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { AlertTriangle, Flame, Search, Star } from "lucide-react";
 import type { Sport, Match } from "@/types";
 import { SPORT_META } from "@/types";
@@ -20,25 +21,84 @@ interface Props {
   tomorrowCount: number;
   favoritesCount: number;
   matches: Match[];
+  favorites: Set<string>;
 }
 
 const SPORTS: Sport[] = ["football", "basketball", "tennis"];
 
-export function FilterBar({ filters, onChange, todayCount, tomorrowCount, favoritesCount, matches }: Props) {
+export function FilterBar({ filters, onChange, todayCount, tomorrowCount, favoritesCount, matches, favorites }: Props) {
+  const activeSport = filters.sports.length === 1 ? filters.sports[0] : null;
+
+  const leagueScopedMatches = useMemo(() => {
+    let list = matches.filter((m) => m.date === filters.date);
+    if (activeSport) {
+      list = list.filter((m) => m.sport === activeSport);
+    }
+    const q = filters.search.trim().toLowerCase();
+    if (q) {
+      list = list.filter(
+        (m) =>
+          m.home.name.toLowerCase().includes(q) ||
+          m.away.name.toLowerCase().includes(q) ||
+          m.league.toLowerCase().includes(q) ||
+          m.leagueShort.toLowerCase().includes(q),
+      );
+    }
+    if (filters.onlyHot) list = list.filter((m) => m.isHot);
+    if (filters.onlyAnomaly) list = list.filter((m) => m.anomalyCount > 0);
+    if (filters.onlyFavorites) list = list.filter((m) => favorites.has(m.id));
+    return list;
+  }, [matches, filters.date, activeSport, filters.search, filters.onlyHot, filters.onlyAnomaly, filters.onlyFavorites, favorites]);
+
+  const leagueShortToName = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const m of matches) {
+      if (!map.has(m.leagueShort)) {
+        map.set(m.leagueShort, m.league);
+      }
+    }
+    return map;
+  }, [matches]);
+
+  const getValidLeagues = (overrides: Partial<Filters>): string[] => {
+    const merged: Filters = { ...filters, ...overrides };
+    const active = merged.sports.length === 1 ? merged.sports[0] : null;
+    if (!active) return [];
+    let list = matches.filter((m) => m.date === merged.date);
+    list = list.filter((m) => m.sport === active);
+    const q = merged.search.trim().toLowerCase();
+    if (q) {
+      list = list.filter(
+        (m) =>
+          m.home.name.toLowerCase().includes(q) ||
+          m.away.name.toLowerCase().includes(q) ||
+          m.league.toLowerCase().includes(q) ||
+          m.leagueShort.toLowerCase().includes(q),
+      );
+    }
+    if (merged.onlyHot) list = list.filter((m) => m.isHot);
+    if (merged.onlyAnomaly) list = list.filter((m) => m.anomalyCount > 0);
+    if (merged.onlyFavorites) list = list.filter((m) => favorites.has(m.id));
+    return [...new Set(list.map((m) => m.leagueShort))].sort();
+  };
+
+  const applyWithLeagueSync = (overrides: Partial<Filters>) => {
+    const merged = { ...filters, ...overrides };
+    const validLeagues = getValidLeagues(overrides);
+    if (merged.league !== null && !validLeagues.includes(merged.league)) {
+      merged.league = null;
+    }
+    onChange(merged);
+  };
+
   const toggleSport = (s: Sport) => {
     const has = filters.sports.includes(s);
     const nextSports = has ? filters.sports.filter((x) => x !== s) : [...filters.sports, s];
-    const nextLeagues = nextSports.length === 1
-      ? [...new Set(matches.filter((m) => m.sport === nextSports[0]).map((m) => m.leagueShort))].sort()
-      : [];
-    const nextLeague = nextLeagues.includes(filters.league ?? "") ? filters.league : null;
-    onChange({ ...filters, sports: nextSports, league: nextLeague });
+    applyWithLeagueSync({ sports: nextSports });
   };
 
-  const activeSport = filters.sports.length === 1 ? filters.sports[0] : null;
-
   const leagues = activeSport
-    ? [...new Set(matches.filter((m) => m.sport === activeSport).map((m) => m.leagueShort))].sort()
+    ? [...new Set(leagueScopedMatches.map((m) => m.leagueShort))].sort()
     : [];
 
   return (
@@ -52,7 +112,7 @@ export function FilterBar({ filters, onChange, todayCount, tomorrowCount, favori
             <button
               key={d}
               type="button"
-              onClick={() => onChange({ ...filters, date: d })}
+              onClick={() => applyWithLeagueSync({ date: d })}
               className={cn(
                 "focus-ring rounded-md px-3 py-1.5 font-display text-[12px] font-600 uppercase tracking-wide transition-colors",
                 active ? "bg-amber text-night shadow-glowAmber" : "text-ink-muted hover:text-ink",
@@ -97,7 +157,7 @@ export function FilterBar({ filters, onChange, todayCount, tomorrowCount, favori
         <input
           type="text"
           value={filters.search}
-          onChange={(e) => onChange({ ...filters, search: e.target.value })}
+          onChange={(e) => applyWithLeagueSync({ search: e.target.value })}
           placeholder="搜索球队 / 联赛"
           className="focus-ring h-9 w-40 rounded-md border border-line bg-night/50 pl-8 pr-3 font-sans text-[12px] text-ink placeholder:text-ink-faint sm:w-56"
           aria-label="搜索赛事"
@@ -106,7 +166,7 @@ export function FilterBar({ filters, onChange, todayCount, tomorrowCount, favori
 
       <button
         type="button"
-        onClick={() => onChange({ ...filters, onlyHot: !filters.onlyHot })}
+        onClick={() => applyWithLeagueSync({ onlyHot: !filters.onlyHot })}
         className={cn(
           "focus-ring flex items-center gap-1 rounded-md border px-2.5 py-1.5 font-display text-[12px] font-600 uppercase tracking-wide transition-colors",
           filters.onlyHot
@@ -121,7 +181,7 @@ export function FilterBar({ filters, onChange, todayCount, tomorrowCount, favori
 
       <button
         type="button"
-        onClick={() => onChange({ ...filters, onlyAnomaly: !filters.onlyAnomaly })}
+        onClick={() => applyWithLeagueSync({ onlyAnomaly: !filters.onlyAnomaly })}
         className={cn(
           "focus-ring flex items-center gap-1 rounded-md border px-2.5 py-1.5 font-display text-[12px] font-600 uppercase tracking-wide transition-colors",
           filters.onlyAnomaly
@@ -136,7 +196,7 @@ export function FilterBar({ filters, onChange, todayCount, tomorrowCount, favori
 
       <button
         type="button"
-        onClick={() => onChange({ ...filters, onlyFavorites: !filters.onlyFavorites })}
+        onClick={() => applyWithLeagueSync({ onlyFavorites: !filters.onlyFavorites })}
         className={cn(
           "focus-ring flex items-center gap-1 rounded-md border px-2.5 py-1.5 font-display text-[12px] font-600 uppercase tracking-wide transition-colors",
           filters.onlyFavorites
@@ -176,11 +236,12 @@ export function FilterBar({ filters, onChange, todayCount, tomorrowCount, favori
           >
             全部
             <span className="ml-1.5 font-mono text-[10px] text-ink-faint">
-              {matches.filter((m) => m.sport === activeSport).length}
+              {leagueScopedMatches.length}
             </span>
           </button>
           {leagues.map((league) => {
-            const count = matches.filter((m) => m.sport === activeSport && m.leagueShort === league).length;
+            const count = leagueScopedMatches.filter((m) => m.leagueShort === league).length;
+            const leagueName = leagueShortToName.get(league) ?? league;
             return (
               <button
                 key={league}
@@ -194,7 +255,7 @@ export function FilterBar({ filters, onChange, todayCount, tomorrowCount, favori
                 )}
                 aria-pressed={filters.league === league}
               >
-                {league}
+                {leagueName}
                 <span className="ml-1.5 font-mono text-[10px] text-ink-faint">
                   {count}
                 </span>

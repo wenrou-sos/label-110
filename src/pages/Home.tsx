@@ -83,6 +83,7 @@ export default function Home() {
         tomorrowCount={tomorrowCount}
         favoritesCount={favoritesCount}
         matches={matches}
+        favorites={favorites}
       />
       {loading ? (
         <Skeleton />

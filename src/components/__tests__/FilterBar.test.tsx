@@ -37,10 +37,11 @@ describe("FilterBar league tabs", () => {
         tomorrowCount={0}
         favoritesCount={0}
         matches={matches}
+        favorites={new Set()}
       />,
     );
     expect(screen.queryByText("全部")).not.toBeInTheDocument();
-    expect(screen.queryByText("EPL")).not.toBeInTheDocument();
+    expect(screen.queryByText("英超")).not.toBeInTheDocument();
   });
 
   it("does not show league tabs when multiple sports selected", () => {
@@ -56,10 +57,11 @@ describe("FilterBar league tabs", () => {
         tomorrowCount={0}
         favoritesCount={0}
         matches={matches}
+        favorites={new Set()}
       />,
     );
     expect(screen.queryByText("全部")).not.toBeInTheDocument();
-    expect(screen.queryByText("EPL")).not.toBeInTheDocument();
+    expect(screen.queryByText("英超")).not.toBeInTheDocument();
     expect(screen.queryByText("NBA")).not.toBeInTheDocument();
   });
 
@@ -78,16 +80,17 @@ describe("FilterBar league tabs", () => {
         tomorrowCount={0}
         favoritesCount={0}
         matches={matches}
+        favorites={new Set()}
       />,
     );
     expect(screen.getByText("全部")).toBeInTheDocument();
-    expect(screen.getByText("EPL")).toBeInTheDocument();
-    expect(screen.getByText("LALIGA")).toBeInTheDocument();
-    expect(screen.getByText("SERIEA")).toBeInTheDocument();
+    expect(screen.getByText("英超")).toBeInTheDocument();
+    expect(screen.getByText("西甲")).toBeInTheDocument();
+    expect(screen.getByText("意甲")).toBeInTheDocument();
     expect(screen.queryByText("NBA")).not.toBeInTheDocument();
   });
 
-  it("extracts unique leagues from data and sorts them alphabetically", () => {
+  it("extracts unique leagues from data and sorts them alphabetically by short name", () => {
     const matches = [
       makeMatch({ id: "a", sport: "football", leagueShort: "SERIEA" }),
       makeMatch({ id: "b", sport: "football", leagueShort: "EPL" }),
@@ -102,9 +105,10 @@ describe("FilterBar league tabs", () => {
         tomorrowCount={0}
         favoritesCount={0}
         matches={matches}
+        favorites={new Set()}
       />,
     );
-    expect(getLeagueTabLabels()).toEqual(["全部", "EPL", "LALIGA", "SERIEA"]);
+    expect(getLeagueTabLabels()).toEqual(["全部", "英超", "西甲", "意甲"]);
   });
 
   it("shows correct counts on league tabs", () => {
@@ -121,12 +125,13 @@ describe("FilterBar league tabs", () => {
         tomorrowCount={0}
         favoritesCount={0}
         matches={matches}
+        favorites={new Set()}
       />,
     );
     const allButtonTexts = screen.getAllByRole("button").map((b) => b.textContent?.trim());
     expect(allButtonTexts).toContain("全部3");
-    expect(allButtonTexts).toContain("EPL2");
-    expect(allButtonTexts).toContain("LALIGA1");
+    expect(allButtonTexts).toContain("英超2");
+    expect(allButtonTexts).toContain("西甲1");
   });
 
   it("calls onChange with the selected league when a league tab is clicked", async () => {
@@ -144,9 +149,10 @@ describe("FilterBar league tabs", () => {
         tomorrowCount={0}
         favoritesCount={0}
         matches={matches}
+        favorites={new Set()}
       />,
     );
-    await user.click(screen.getByText("EPL"));
+    await user.click(screen.getByText("英超"));
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ league: "EPL" }));
   });
 
@@ -162,6 +168,7 @@ describe("FilterBar league tabs", () => {
         tomorrowCount={0}
         favoritesCount={0}
         matches={matches}
+        favorites={new Set()}
       />,
     );
     await user.click(screen.getByText("全部"));
@@ -183,6 +190,7 @@ describe("FilterBar league tabs", () => {
         tomorrowCount={0}
         favoritesCount={0}
         matches={matches}
+        favorites={new Set()}
       />,
     );
     await user.click(screen.getByRole("button", { name: /篮球/ }));
@@ -204,6 +212,7 @@ describe("FilterBar league tabs", () => {
         tomorrowCount={0}
         favoritesCount={0}
         matches={matches}
+        favorites={new Set()}
       />,
     );
     await user.click(screen.getByRole("button", { name: /足球/ }));
