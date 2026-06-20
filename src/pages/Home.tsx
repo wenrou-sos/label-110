@@ -27,6 +27,7 @@ export default function Home() {
     onlyHot: false,
     onlyAnomaly: false,
     onlyFavorites: false,
+    league: null,
   });
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const selectedMatch = useMemo<Match | null>(
@@ -42,6 +43,9 @@ export default function Home() {
     let list = matches.filter((m) => m.date === filters.date);
     if (filters.sports.length) {
       list = list.filter((m) => filters.sports.includes(m.sport));
+    }
+    if (filters.league) {
+      list = list.filter((m) => m.leagueShort === filters.league);
     }
     const q = filters.search.trim().toLowerCase();
     if (q) {
@@ -78,6 +82,7 @@ export default function Home() {
         todayCount={todayCount}
         tomorrowCount={tomorrowCount}
         favoritesCount={favoritesCount}
+        matches={matches}
       />
       {loading ? (
         <Skeleton />

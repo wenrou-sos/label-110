@@ -1,5 +1,5 @@
 import { AlertTriangle, Flame, Search, Star } from "lucide-react";
-import type { Sport } from "@/types";
+import type { Sport, Match } from "@/types";
 import { SPORT_META } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -10,6 +10,7 @@ export interface Filters {
   onlyHot: boolean;
   onlyAnomaly: boolean;
   onlyFavorites: boolean;
+  league: string | null;
 }
 
 interface Props {
@@ -18,19 +19,32 @@ interface Props {
   todayCount: number;
   tomorrowCount: number;
   favoritesCount: number;
+  matches: Match[];
 }
 
 const SPORTS: Sport[] = ["football", "basketball", "tennis"];
 
-export function FilterBar({ filters, onChange, todayCount, tomorrowCount, favoritesCount }: Props) {
+export function FilterBar({ filters, onChange, todayCount, tomorrowCount, favoritesCount, matches }: Props) {
   const toggleSport = (s: Sport) => {
     const has = filters.sports.includes(s);
-    onChange({ ...filters, sports: has ? filters.sports.filter((x) => x !== s) : [...filters.sports, s] });
+    const nextSports = has ? filters.sports.filter((x) => x !== s) : [...filters.sports, s];
+    const nextLeagues = nextSports.length === 1
+      ? [...new Set(matches.filter((m) => m.sport === nextSports[0]).map((m) => m.leagueShort))].sort()
+      : [];
+    const nextLeague = nextLeagues.includes(filters.league ?? "") ? filters.league : null;
+    onChange({ ...filters, sports: nextSports, league: nextLeague });
   };
 
+  const activeSport = filters.sports.length === 1 ? filters.sports[0] : null;
+
+  const leagues = activeSport
+    ? [...new Set(matches.filter((m) => m.sport === activeSport).map((m) => m.leagueShort))].sort()
+    : [];
+
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b border-line bg-surface/50 px-4 py-2.5">
-      <div className="flex items-center rounded-lg border border-line bg-night/50 p-0.5">
+    <div className="flex flex-col gap-2 border-b border-line bg-surface/50 px-4 py-2.5">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center rounded-lg border border-line bg-night/50 p-0.5">
         {(["today", "tomorrow"] as const).map((d) => {
           const active = filters.date === d;
           const count = d === "today" ? todayCount : tomorrowCount;
@@ -142,6 +156,53 @@ export function FilterBar({ filters, onChange, todayCount, tomorrowCount, favori
           {favoritesCount}
         </span>
       </button>
+      </div>
+
+      {leagues.length > 0 && (
+        <div
+          data-testid="league-tabs"
+          className="flex items-center gap-1 overflow-x-auto scrollbar-thin pb-0.5"
+        >
+          <button
+            type="button"
+            onClick={() => onChange({ ...filters, league: null })}
+            className={cn(
+              "focus-ring shrink-0 rounded-md px-2.5 py-1 font-display text-[11px] font-600 uppercase tracking-wide transition-colors whitespace-nowrap",
+              filters.league === null
+                ? "bg-cyan/15 text-cyan border border-cyan/40"
+                : "text-ink-muted hover:text-ink border border-transparent",
+            )}
+            aria-pressed={filters.league === null}
+          >
+            全部
+            <span className="ml-1.5 font-mono text-[10px] text-ink-faint">
+              {matches.filter((m) => m.sport === activeSport).length}
+            </span>
+          </button>
+          {leagues.map((league) => {
+            const count = matches.filter((m) => m.sport === activeSport && m.leagueShort === league).length;
+            return (
+              <button
+                key={league}
+                type="button"
+                onClick={() => onChange({ ...filters, league })}
+                className={cn(
+                  "focus-ring shrink-0 rounded-md px-2.5 py-1 font-display text-[11px] font-600 uppercase tracking-wide transition-colors whitespace-nowrap",
+                  filters.league === league
+                    ? "bg-cyan/15 text-cyan border border-cyan/40"
+                    : "text-ink-muted hover:text-ink border border-transparent",
+                )}
+                aria-pressed={filters.league === league}
+              >
+                {league}
+                <span className="ml-1.5 font-mono text-[10px] text-ink-faint">
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
