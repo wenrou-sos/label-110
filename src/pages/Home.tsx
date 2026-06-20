@@ -14,6 +14,7 @@ export default function Home() {
   useOddsStream();
   const matches = useOddsStore((s) => s.matches);
   const connState = useOddsStore((s) => s.connState);
+  const favorites = useOddsStore((s) => s.favorites);
   const { width } = useWindowSize();
   const itemHeight = width >= 1024 ? 168 : 340;
 
@@ -23,10 +24,12 @@ export default function Home() {
     search: "",
     onlyHot: false,
     onlyAnomaly: false,
+    onlyFavorites: false,
   });
 
   const todayCount = useMemo(() => matches.filter((m) => m.date === "today").length, [matches]);
   const tomorrowCount = useMemo(() => matches.filter((m) => m.date === "tomorrow").length, [matches]);
+  const favoritesCount = favorites.size;
 
   const filtered = useMemo(() => {
     let list = matches.filter((m) => m.date === filters.date);
@@ -45,13 +48,17 @@ export default function Home() {
     }
     if (filters.onlyHot) list = list.filter((m) => m.isHot);
     if (filters.onlyAnomaly) list = list.filter((m) => m.anomalyCount > 0);
+    if (filters.onlyFavorites) list = list.filter((m) => favorites.has(m.id));
 
     return [...list].sort((a, b) => {
+      const aFav = favorites.has(a.id);
+      const bFav = favorites.has(b.id);
+      if (aFav !== bFav) return aFav ? -1 : 1;
       if (a.isHot !== b.isHot) return a.isHot ? -1 : 1;
       if (rank(a.status) !== rank(b.status)) return rank(a.status) - rank(b.status);
       return a.startTime - b.startTime;
     });
-  }, [matches, filters]);
+  }, [matches, filters, favorites]);
 
   const loading = matches.length === 0 && (connState === "connecting" || connState === "reconnecting");
 
@@ -63,6 +70,7 @@ export default function Home() {
         onChange={setFilters}
         todayCount={todayCount}
         tomorrowCount={tomorrowCount}
+        favoritesCount={favoritesCount}
       />
       {loading ? <Skeleton /> : <MatchList matches={filtered} itemHeight={itemHeight} />}
     </div>

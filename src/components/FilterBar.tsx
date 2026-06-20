@@ -1,4 +1,4 @@
-import { AlertTriangle, Flame, Search } from "lucide-react";
+import { AlertTriangle, Flame, Search, Star } from "lucide-react";
 import type { Sport } from "@/types";
 import { SPORT_META } from "@/types";
 import { cn } from "@/lib/utils";
@@ -9,6 +9,7 @@ export interface Filters {
   search: string;
   onlyHot: boolean;
   onlyAnomaly: boolean;
+  onlyFavorites: boolean;
 }
 
 interface Props {
@@ -16,11 +17,12 @@ interface Props {
   onChange: (next: Filters) => void;
   todayCount: number;
   tomorrowCount: number;
+  favoritesCount: number;
 }
 
 const SPORTS: Sport[] = ["football", "basketball", "tennis"];
 
-export function FilterBar({ filters, onChange, todayCount, tomorrowCount }: Props) {
+export function FilterBar({ filters, onChange, todayCount, tomorrowCount, favoritesCount }: Props) {
   const toggleSport = (s: Sport) => {
     const has = filters.sports.includes(s);
     onChange({ ...filters, sports: has ? filters.sports.filter((x) => x !== s) : [...filters.sports, s] });
@@ -116,6 +118,29 @@ export function FilterBar({ filters, onChange, todayCount, tomorrowCount }: Prop
       >
         <AlertTriangle size={13} />
         仅异常
+      </button>
+
+      <button
+        type="button"
+        onClick={() => onChange({ ...filters, onlyFavorites: !filters.onlyFavorites })}
+        className={cn(
+          "focus-ring flex items-center gap-1 rounded-md border px-2.5 py-1.5 font-display text-[12px] font-600 uppercase tracking-wide transition-colors",
+          filters.onlyFavorites
+            ? "border-amber/50 bg-amber/10 text-amber shadow-glowAmber"
+            : "border-line bg-raised text-ink-muted hover:text-ink",
+        )}
+        aria-pressed={filters.onlyFavorites}
+      >
+        <Star size={13} fill={filters.onlyFavorites ? "currentColor" : "none"} />
+        仅收藏
+        <span
+          className={cn(
+            "ml-1 font-mono text-[10px]",
+            filters.onlyFavorites ? "text-amber/80" : "text-ink-faint",
+          )}
+        >
+          {favoritesCount}
+        </span>
       </button>
     </div>
   );

@@ -1,4 +1,5 @@
 import { memo, useMemo } from "react";
+import { Star, StarOff } from "lucide-react";
 import type { Match, Team } from "@/types";
 import { SPORT_META } from "@/types";
 import { useOddsStore } from "@/store/useOddsStore";
@@ -38,7 +39,8 @@ function TeamRow({
 }
 
 function MatchCardBase({ match }: Props) {
-  const { home, away, score, status, startTime, sport, leagueShort, markets, distribution, isHot, betVolume } = match;
+  const { id, home, away, score, status, startTime, sport, leagueShort, markets, distribution, isHot, betVolume } =
+    match;
 
   const anomalyKeysStr = useOddsStore((s) =>
     s.anomalies
@@ -50,6 +52,8 @@ function MatchCardBase({ match }: Props) {
     const evs = s.anomalies.filter((a) => a.matchId === match.id);
     return evs.length ? Math.max(...evs.map((e) => e.dropPct)) : 0;
   });
+  const isFavorited = useOddsStore((s) => s.favorites.has(id));
+  const toggleFavorite = useOddsStore((s) => s.toggleFavorite);
 
   const anomalyKeys = useMemo(() => {
     const set = new Set<string>();
@@ -68,15 +72,29 @@ function MatchCardBase({ match }: Props) {
         "hover:border-amber/40 hover:bg-surface",
         isHot ? "border-amber/45 shadow-glowAmber" : "border-line",
         hasAnomaly && "border-hot-anomaly/45",
+        isFavorited && !isHot && !hasAnomaly && "border-amber/30",
       )}
       aria-label={`${home.name} 对阵 ${away.name}，${leagueShort} ${formatTime(startTime)}`}
     >
-      {(isHot || hasAnomaly) && (
-        <div className="absolute right-2 top-2 z-10 flex gap-1">
-          {isHot && <HotBadge />}
-          {hasAnomaly && <AnomalyBadge dropPct={maxDrop} />}
-        </div>
-      )}
+      <div className="absolute right-2 top-2 z-10 flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => toggleFavorite(id)}
+          aria-pressed={isFavorited}
+          aria-label={isFavorited ? "取消收藏" : "收藏比赛"}
+          className={cn(
+            "focus-ring grid h-6 w-6 place-items-center rounded-md border transition-colors",
+            isFavorited
+              ? "border-amber/50 bg-amber/10 text-amber shadow-glowAmber"
+              : "border-line bg-raised/60 text-ink-faint opacity-0 transition-opacity group-hover:opacity-100 hover:text-amber hover:border-amber/40",
+          )}
+          title={isFavorited ? "取消收藏（异常赔率会系统通知）" : "收藏（异常赔率会系统通知）"}
+        >
+          {isFavorited ? <Star size={13} fill="currentColor" strokeWidth={2} /> : <StarOff size={13} strokeWidth={2} />}
+        </button>
+        {isHot && <HotBadge />}
+        {hasAnomaly && <AnomalyBadge dropPct={maxDrop} />}
+      </div>
 
       <div className="flex flex-col gap-3 lg:flex-row lg:items-stretch">
         <div className="w-full shrink-0 lg:w-[230px]">
