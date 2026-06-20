@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 
 interface Props {
   match: Match;
+  onOpenDetail?: () => void;
 }
 
 function TeamRow({
@@ -38,7 +39,7 @@ function TeamRow({
   );
 }
 
-function MatchCardBase({ match }: Props) {
+function MatchCardBase({ match, onOpenDetail }: Props) {
   const { id, home, away, score, status, startTime, sport, leagueShort, markets, distribution, isHot, betVolume } =
     match;
 
@@ -97,7 +98,16 @@ function MatchCardBase({ match }: Props) {
       </div>
 
       <div className="flex flex-col gap-3 lg:flex-row lg:items-stretch">
-        <div className="w-full shrink-0 lg:w-[230px]">
+        <button
+          type="button"
+          onClick={onOpenDetail}
+          disabled={!onOpenDetail}
+          aria-label="查看赛事详情"
+          className={cn(
+            "focus-ring w-full shrink-0 text-left transition-colors lg:w-[230px]",
+            onOpenDetail && "rounded-lg hover:bg-raised/50",
+          )}
+        >
           <div className="flex items-center justify-between gap-2">
             <span className="chip border border-line bg-raised text-ink-muted">
               <span aria-hidden="true">{meta.emoji}</span>
@@ -119,7 +129,7 @@ function MatchCardBase({ match }: Props) {
               ¥{(betVolume / 1000).toFixed(1)}k
             </span>
           </div>
-        </div>
+        </button>
 
         <div className="flex-1 lg:border-l lg:border-line lg:pl-3">
           <OddsGrid markets={markets} anomalyKeys={anomalyKeys} />

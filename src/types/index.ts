@@ -40,6 +40,11 @@ export interface Distribution {
   away: number;
 }
 
+export interface OddsHistoryPoint {
+  odds: number;
+  t: number;
+}
+
 export interface AnomalyEvent {
   matchId: string;
   market: MarketKey;

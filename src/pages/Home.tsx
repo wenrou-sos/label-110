@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
-import type { Status } from "@/types";
+import type { Match, Status } from "@/types";
 import { useOddsStream } from "@/hooks/useOddsStream";
 import { useWindowSize } from "@/hooks/useClock";
 import { useOddsStore } from "@/store/useOddsStore";
 import { StatusBar } from "@/components/StatusBar";
 import { FilterBar, type Filters } from "@/components/FilterBar";
 import { MatchList } from "@/components/MatchList";
+import { MatchDetail } from "@/components/MatchDetail";
 import { Skeleton } from "@/components/Skeleton";
 
 const rank = (s: Status): number => (s === "live" ? 0 : s === "scheduled" ? 1 : 2);
@@ -26,6 +27,11 @@ export default function Home() {
     onlyAnomaly: false,
     onlyFavorites: false,
   });
+  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
+  const selectedMatch = useMemo<Match | null>(
+    () => (selectedMatchId ? matches.find((m) => m.id === selectedMatchId) ?? null : null),
+    [selectedMatchId, matches],
+  );
 
   const todayCount = useMemo(() => matches.filter((m) => m.date === "today").length, [matches]);
   const tomorrowCount = useMemo(() => matches.filter((m) => m.date === "tomorrow").length, [matches]);
@@ -72,7 +78,12 @@ export default function Home() {
         tomorrowCount={tomorrowCount}
         favoritesCount={favoritesCount}
       />
-      {loading ? <Skeleton /> : <MatchList matches={filtered} itemHeight={itemHeight} />}
+      {loading ? (
+        <Skeleton />
+      ) : (
+        <MatchList matches={filtered} itemHeight={itemHeight} onOpenDetail={(m) => setSelectedMatchId(m.id)} />
+      )}
+      {selectedMatch && <MatchDetail match={selectedMatch} onClose={() => setSelectedMatchId(null)} />}
     </div>
   );
 }

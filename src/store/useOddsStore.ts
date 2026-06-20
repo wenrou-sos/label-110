@@ -5,6 +5,7 @@ import type {
   Distribution,
   MarketKey,
   Match,
+  OddsHistoryPoint,
   Score,
   Status,
 } from "@/types";
@@ -14,10 +15,12 @@ import { markHotMatches } from "@/utils/hotMatch";
 const tracker = new AnomalyTracker();
 const changeCounts = new Map<string, number>();
 const notifiedAnomalies = new Map<string, number>();
+const oddsHistory = new Map<string, OddsHistoryPoint[]>();
 
 export const HOT_TOP_N = 6;
 const NOTIFICATION_COOLDOWN_MS = 30 * 1000;
 const NOTIFICATION_PERMISSION_REQ = "default";
+const MAX_HISTORY_POINTS = 60;
 
 function bumpChange(matchId: string): void {
   changeCounts.set(matchId, (changeCounts.get(matchId) ?? 0) + 1);
@@ -86,6 +89,7 @@ interface OddsState {
   applyStatus: (matchId: string, status: Status, score: Score) => void;
   tickHot: (now: number) => void;
   toggleFavorite: (matchId: string) => Promise<void>;
+  getOddsHistory: (matchId: string, market: MarketKey, selection: string) => OddsHistoryPoint[];
   reset: () => void;
 }
 
@@ -104,10 +108,14 @@ export const useOddsStore = create<OddsState>((set, get) => ({
     tracker.clear();
     changeCounts.clear();
     notifiedAnomalies.clear();
+    oddsHistory.clear();
     for (const m of matches) {
       for (const mk of m.markets) {
         for (const sel of mk.selections) {
           tracker.seed(m.id, mk.key, sel.key, sel.odds, now);
+          oddsHistory.set(anomalyKey(m.id, mk.key, sel.key), [
+            { odds: sel.odds, t: now },
+          ]);
         }
       }
     }
@@ -130,6 +138,12 @@ export const useOddsStore = create<OddsState>((set, get) => ({
 
     const ev = tracker.record(matchId, market, selectionKey, odds, now);
     bumpChange(matchId);
+
+    const histKey = anomalyKey(matchId, market, selectionKey);
+    const hist = oddsHistory.get(histKey) ?? [];
+    hist.push({ odds, t: now });
+    if (hist.length > MAX_HISTORY_POINTS) hist.shift();
+    oddsHistory.set(histKey, hist);
 
     if (ev && current && state0.favorites.has(matchId)) {
       const k = anomalyKey(matchId, market, selectionKey);
@@ -222,10 +236,17 @@ export const useOddsStore = create<OddsState>((set, get) => ({
     }
   },
 
+  getOddsHistory: (matchId, market, selection) => {
+    const key = anomalyKey(matchId, market, selection);
+    const hist = oddsHistory.get(key);
+    return hist ? [...hist] : [];
+  },
+
   reset: () => {
     tracker.clear();
     changeCounts.clear();
     notifiedAnomalies.clear();
+    oddsHistory.clear();
     set({
       matches: [],
       anomalies: [],

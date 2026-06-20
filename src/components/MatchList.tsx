@@ -6,9 +6,10 @@ import { MatchCard } from "@/components/MatchCard";
 interface Props {
   matches: Match[];
   itemHeight: number;
+  onOpenDetail?: (match: Match) => void;
 }
 
-export function MatchList({ matches, itemHeight }: Props) {
+export function MatchList({ matches, itemHeight, onOpenDetail }: Props) {
   const { containerRef, range } = useVirtualList({
     itemCount: matches.length,
     itemHeight,
@@ -43,7 +44,7 @@ export function MatchList({ matches, itemHeight }: Props) {
         <div style={{ transform: `translateY(${range.offsetY}px)` }}>
           {visible.map((m) => (
             <div key={m.id} style={{ height: itemHeight }} role="listitem" className="pb-2.5">
-              <MatchCard match={m} />
+              <MatchCard match={m} onOpenDetail={onOpenDetail ? () => onOpenDetail(m) : undefined} />
             </div>
           ))}
         </div>
