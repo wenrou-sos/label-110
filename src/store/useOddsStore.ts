@@ -114,20 +114,7 @@ export const useOddsStore = create<OddsState>((set, get) => ({
           tracker.seed(m.id, mk.key, sel.key, sel.odds, now);
           const histKey = anomalyKey(m.id, mk.key, sel.key);
           if (!oddsHistory.has(histKey)) {
-            const hist: OddsHistoryPoint[] = [];
-            const startTime = m.startTime;
-            if (m.status !== "scheduled" && startTime < now) {
-              const points = 30;
-              const interval = Math.max(60000, (now - startTime) / (points + 1));
-              for (let i = 1; i <= points; i++) {
-                const t = startTime + interval * i;
-                if (t >= now) break;
-                const jitter = 1 + (Math.random() - 0.5) * 0.3;
-                hist.push({ odds: sel.odds * jitter, t: Math.floor(t) });
-              }
-            }
-            hist.push({ odds: sel.odds, t: now });
-            oddsHistory.set(histKey, hist);
+            oddsHistory.set(histKey, [{ odds: sel.odds, t: now }]);
           }
         }
       }

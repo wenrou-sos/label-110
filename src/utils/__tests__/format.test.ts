@@ -1,10 +1,20 @@
 import { describe, it, expect } from "vitest";
-import { formatClock, formatOdds, formatPercent, formatSignedPercent, formatTime, countdownTo } from "@/utils/format";
+import { formatClock, formatOdds, formatPercent, formatSignedPercent, formatTime, formatTimeWithSeconds, countdownTo } from "@/utils/format";
 
 describe("format utils", () => {
   it("formats time as HH:MM", () => {
     const ts = new Date(2026, 5, 19, 9, 5).getTime();
     expect(formatTime(ts)).toBe("09:05");
+  });
+
+  it("formats time with seconds as HH:MM:SS", () => {
+    const ts = new Date(2026, 5, 19, 14, 7, 9).getTime();
+    expect(formatTimeWithSeconds(ts)).toBe("14:07:09");
+  });
+
+  it("pads seconds and minutes in time-with-seconds", () => {
+    const ts = new Date(2026, 5, 19, 1, 2, 3).getTime();
+    expect(formatTimeWithSeconds(ts)).toBe("01:02:03");
   });
 
   it("formats clock as HH:MM:SS", () => {
