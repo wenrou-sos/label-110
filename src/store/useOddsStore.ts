@@ -21,6 +21,7 @@ export const HOT_TOP_N = 6;
 const NOTIFICATION_COOLDOWN_MS = 30 * 1000;
 const NOTIFICATION_PERMISSION_REQ = "default";
 const MAX_HISTORY_POINTS = 10000;
+const MAX_COMPARE_MATCHES = 3;
 
 function bumpChange(matchId: string): void {
   changeCounts.set(matchId, (changeCounts.get(matchId) ?? 0) + 1);
@@ -74,6 +75,8 @@ interface OddsState {
   lastUpdated: number;
   reconnectAttempt: number;
   favorites: Set<string>;
+  comparisonIds: Set<string>;
+  isComparePanelOpen: boolean;
 
   setConnState: (s: ConnState) => void;
   setReconnectAttempt: (n: number) => void;
@@ -90,6 +93,9 @@ interface OddsState {
   tickHot: (now: number) => void;
   toggleFavorite: (matchId: string) => Promise<void>;
   getOddsHistory: (matchId: string, market: MarketKey, selection: string) => OddsHistoryPoint[];
+  toggleComparison: (matchId: string) => void;
+  clearComparison: () => void;
+  setComparePanelOpen: (open: boolean) => void;
   reset: () => void;
 }
 
@@ -100,6 +106,8 @@ export const useOddsStore = create<OddsState>((set, get) => ({
   lastUpdated: 0,
   reconnectAttempt: 0,
   favorites: new Set<string>(),
+  comparisonIds: new Set<string>(),
+  isComparePanelOpen: false,
 
   setConnState: (s) => set({ connState: s }),
   setReconnectAttempt: (n) => set({ reconnectAttempt: n }),
@@ -242,6 +250,28 @@ export const useOddsStore = create<OddsState>((set, get) => ({
     return hist ? [...hist] : [];
   },
 
+  toggleComparison: (matchId) => {
+    const next = new Set(get().comparisonIds);
+    if (next.has(matchId)) {
+      next.delete(matchId);
+    } else {
+      if (next.size >= MAX_COMPARE_MATCHES) return;
+      next.add(matchId);
+    }
+    set({ comparisonIds: next });
+    if (next.size > 0) {
+      set({ isComparePanelOpen: true });
+    }
+  },
+
+  clearComparison: () => {
+    set({ comparisonIds: new Set(), isComparePanelOpen: false });
+  },
+
+  setComparePanelOpen: (open) => {
+    set({ isComparePanelOpen: open });
+  },
+
   reset: () => {
     tracker.clear();
     changeCounts.clear();
@@ -253,6 +283,8 @@ export const useOddsStore = create<OddsState>((set, get) => ({
       connState: "connecting",
       lastUpdated: 0,
       favorites: new Set(),
+      comparisonIds: new Set(),
+      isComparePanelOpen: false,
     });
   },
 }));

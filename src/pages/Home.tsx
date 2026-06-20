@@ -7,6 +7,7 @@ import { StatusBar } from "@/components/StatusBar";
 import { FilterBar, type Filters } from "@/components/FilterBar";
 import { MatchList } from "@/components/MatchList";
 import { MatchDetail } from "@/components/MatchDetail";
+import { ComparePanel } from "@/components/ComparePanel";
 import { Skeleton } from "@/components/Skeleton";
 
 const rank = (s: Status): number => (s === "live" ? 0 : s === "scheduled" ? 1 : 2);
@@ -84,6 +85,7 @@ export default function Home() {
         <MatchList matches={filtered} itemHeight={itemHeight} onOpenDetail={(m) => setSelectedMatchId(m.id)} />
       )}
       {selectedMatch && <MatchDetail match={selectedMatch} onClose={() => setSelectedMatchId(null)} />}
+      <ComparePanel />
     </div>
   );
 }

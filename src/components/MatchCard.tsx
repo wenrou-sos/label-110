@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import { Star, StarOff } from "lucide-react";
+import { Star, StarOff, GitCompare } from "lucide-react";
 import type { Match, Team } from "@/types";
 import { SPORT_META } from "@/types";
 import { useOddsStore } from "@/store/useOddsStore";
@@ -55,6 +55,8 @@ function MatchCardBase({ match, onOpenDetail }: Props) {
   });
   const isFavorited = useOddsStore((s) => s.favorites.has(id));
   const toggleFavorite = useOddsStore((s) => s.toggleFavorite);
+  const isInComparison = useOddsStore((s) => s.comparisonIds.has(id));
+  const toggleComparison = useOddsStore((s) => s.toggleComparison);
 
   const anomalyKeys = useMemo(() => {
     const set = new Set<string>();
@@ -74,10 +76,29 @@ function MatchCardBase({ match, onOpenDetail }: Props) {
         isHot ? "border-amber/45 shadow-glowAmber" : "border-line",
         hasAnomaly && "border-hot-anomaly/45",
         isFavorited && !isHot && !hasAnomaly && "border-amber/30",
+        isInComparison && "border-cyan/50 shadow-[0_0_0_2px_rgba(34,211,238,0.15)]",
       )}
       aria-label={`${home.name} 对阵 ${away.name}，${leagueShort} ${formatTime(startTime)}`}
     >
       <div className="absolute right-2 top-2 z-10 flex items-center gap-1">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleComparison(id);
+          }}
+          aria-pressed={isInComparison}
+          aria-label={isInComparison ? "移除对比" : "加入对比"}
+          className={cn(
+            "focus-ring grid h-6 w-6 place-items-center rounded-md border transition-all",
+            isInComparison
+              ? "border-cyan/60 bg-cyan/10 text-cyan"
+              : "border-line bg-raised/60 text-ink-faint opacity-60 hover:opacity-100 hover:text-cyan hover:border-cyan/40",
+          )}
+          title={isInComparison ? "移除对比" : "加入对比"}
+        >
+          <GitCompare size={13} strokeWidth={2} />
+        </button>
         <button
           type="button"
           onClick={() => toggleFavorite(id)}

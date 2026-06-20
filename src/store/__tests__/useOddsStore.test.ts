@@ -115,4 +115,74 @@ describe("useOddsStore", () => {
       expect(useOddsStore.getState().getOddsHistory("a", "1x2", "home")).toEqual([]);
     });
   });
+
+  describe("comparison mode", () => {
+    it("starts with empty comparison and panel closed", () => {
+      const s = useOddsStore.getState();
+      expect(s.comparisonIds.size).toBe(0);
+      expect(s.isComparePanelOpen).toBe(false);
+    });
+
+    it("toggleComparison adds a match and opens the panel", () => {
+      useOddsStore.getState().setSnapshot([makeMatch({ id: "a" })], 1000);
+      useOddsStore.getState().toggleComparison("a");
+      const s = useOddsStore.getState();
+      expect(s.comparisonIds.has("a")).toBe(true);
+      expect(s.comparisonIds.size).toBe(1);
+      expect(s.isComparePanelOpen).toBe(true);
+    });
+
+    it("toggleComparison removes a match that is already in comparison", () => {
+      useOddsStore.getState().setSnapshot([makeMatch({ id: "a" })], 1000);
+      useOddsStore.getState().toggleComparison("a");
+      useOddsStore.getState().toggleComparison("a");
+      const s = useOddsStore.getState();
+      expect(s.comparisonIds.has("a")).toBe(false);
+      expect(s.comparisonIds.size).toBe(0);
+    });
+
+    it("caps comparison at 3 matches", () => {
+      useOddsStore.getState().setSnapshot([
+        makeMatch({ id: "a" }),
+        makeMatch({ id: "b" }),
+        makeMatch({ id: "c" }),
+        makeMatch({ id: "d" }),
+      ], 1000);
+      useOddsStore.getState().toggleComparison("a");
+      useOddsStore.getState().toggleComparison("b");
+      useOddsStore.getState().toggleComparison("c");
+      useOddsStore.getState().toggleComparison("d");
+      const s = useOddsStore.getState();
+      expect(s.comparisonIds.size).toBe(3);
+      expect(s.comparisonIds.has("a")).toBe(true);
+      expect(s.comparisonIds.has("b")).toBe(true);
+      expect(s.comparisonIds.has("c")).toBe(true);
+      expect(s.comparisonIds.has("d")).toBe(false);
+    });
+
+    it("clearComparison empties the list and closes the panel", () => {
+      useOddsStore.getState().setSnapshot([makeMatch({ id: "a" })], 1000);
+      useOddsStore.getState().toggleComparison("a");
+      useOddsStore.getState().clearComparison();
+      const s = useOddsStore.getState();
+      expect(s.comparisonIds.size).toBe(0);
+      expect(s.isComparePanelOpen).toBe(false);
+    });
+
+    it("setComparePanelOpen controls panel visibility", () => {
+      useOddsStore.getState().setComparePanelOpen(true);
+      expect(useOddsStore.getState().isComparePanelOpen).toBe(true);
+      useOddsStore.getState().setComparePanelOpen(false);
+      expect(useOddsStore.getState().isComparePanelOpen).toBe(false);
+    });
+
+    it("reset clears comparison state", () => {
+      useOddsStore.getState().setSnapshot([makeMatch({ id: "a" })], 1000);
+      useOddsStore.getState().toggleComparison("a");
+      useOddsStore.getState().reset();
+      const s = useOddsStore.getState();
+      expect(s.comparisonIds.size).toBe(0);
+      expect(s.isComparePanelOpen).toBe(false);
+    });
+  });
 });
