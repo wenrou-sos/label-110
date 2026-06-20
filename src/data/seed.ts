@@ -221,9 +221,15 @@ export function generateMatches(seed = 20260619): Match[] {
     const awayDef = teams[bIdx];
 
     const date: "today" | "tomorrow" = rnd() > 0.45 ? "today" : "tomorrow";
-    const status = pick(rnd, statuses);
+    const rawStatus = pick(rnd, statuses);
+    const status: Status = date === "tomorrow" ? "scheduled" : rawStatus;
     const hourOffset = Math.floor(rnd() * 24);
-    const startTime = todayStart + (date === "tomorrow" ? dayMs : 0) + hourOffset * 60 * 1000;
+    const minuteOffset = Math.floor(rnd() * 60);
+    const startTime =
+      todayStart +
+      (date === "tomorrow" ? dayMs : 0) +
+      hourOffset * 60 * 60 * 1000 +
+      minuteOffset * 60 * 1000;
 
     const liveScore = status === "live";
     const score = {
