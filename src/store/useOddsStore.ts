@@ -213,11 +213,13 @@ export const useOddsStore = create<OddsState>((set, get) => ({
     const willAdd = !next.has(matchId);
     if (willAdd) {
       next.add(matchId);
-      await requestNotifyPermission();
     } else {
       next.delete(matchId);
     }
     set({ favorites: next });
+    if (willAdd) {
+      requestNotifyPermission();
+    }
   },
 
   reset: () => {

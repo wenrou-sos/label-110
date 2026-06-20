@@ -83,10 +83,10 @@ function MatchCardBase({ match }: Props) {
           aria-pressed={isFavorited}
           aria-label={isFavorited ? "取消收藏" : "收藏比赛"}
           className={cn(
-            "focus-ring grid h-6 w-6 place-items-center rounded-md border transition-colors",
+            "focus-ring grid h-6 w-6 place-items-center rounded-md border transition-all",
             isFavorited
               ? "border-amber/50 bg-amber/10 text-amber shadow-glowAmber"
-              : "border-line bg-raised/60 text-ink-faint opacity-0 transition-opacity group-hover:opacity-100 hover:text-amber hover:border-amber/40",
+              : "border-line bg-raised/60 text-ink-faint opacity-60 hover:opacity-100 hover:text-amber hover:border-amber/40",
           )}
           title={isFavorited ? "取消收藏（异常赔率会系统通知）" : "收藏（异常赔率会系统通知）"}
         >
