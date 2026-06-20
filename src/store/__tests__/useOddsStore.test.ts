@@ -141,23 +141,29 @@ describe("useOddsStore", () => {
       expect(s.comparisonIds.size).toBe(0);
     });
 
-    it("caps comparison at 3 matches", () => {
+    it("caps comparison at 2 matches", () => {
       useOddsStore.getState().setSnapshot([
         makeMatch({ id: "a" }),
         makeMatch({ id: "b" }),
         makeMatch({ id: "c" }),
-        makeMatch({ id: "d" }),
       ], 1000);
       useOddsStore.getState().toggleComparison("a");
       useOddsStore.getState().toggleComparison("b");
       useOddsStore.getState().toggleComparison("c");
-      useOddsStore.getState().toggleComparison("d");
       const s = useOddsStore.getState();
-      expect(s.comparisonIds.size).toBe(3);
+      expect(s.comparisonIds.size).toBe(2);
       expect(s.comparisonIds.has("a")).toBe(true);
       expect(s.comparisonIds.has("b")).toBe(true);
-      expect(s.comparisonIds.has("c")).toBe(true);
-      expect(s.comparisonIds.has("d")).toBe(false);
+      expect(s.comparisonIds.has("c")).toBe(false);
+    });
+
+    it("closes the panel when the last match is removed", () => {
+      useOddsStore.getState().setSnapshot([makeMatch({ id: "a" })], 1000);
+      useOddsStore.getState().toggleComparison("a");
+      expect(useOddsStore.getState().isComparePanelOpen).toBe(true);
+      useOddsStore.getState().toggleComparison("a");
+      expect(useOddsStore.getState().isComparePanelOpen).toBe(false);
+      expect(useOddsStore.getState().comparisonIds.size).toBe(0);
     });
 
     it("clearComparison empties the list and closes the panel", () => {

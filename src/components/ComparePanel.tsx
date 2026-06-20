@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { X, Trash2, GitCompare } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import type { Match, Market, MarketKey } from "@/types";
+import type { Match, MarketKey } from "@/types";
 import { SPORT_META, MARKET_LABELS } from "@/types";
 import { useOddsStore } from "@/store/useOddsStore";
 import { formatTime, formatOdds } from "@/utils/format";
@@ -20,18 +20,38 @@ function MarketRow({
 }) {
   const markets = matches.map((m) => m.markets.find((mk) => mk.key === marketKey));
   const hasMarket = markets.some(Boolean);
+
+  const allKeys = useMemo(() => {
+    const keys: string[] = [];
+    for (const mk of markets) {
+      if (!mk) continue;
+      for (const sel of mk.selections) {
+        if (!keys.includes(sel.key)) keys.push(sel.key);
+      }
+    }
+    return keys;
+  }, [markets]);
+
   if (!hasMarket) return null;
 
-  const firstMarket = markets.find(Boolean) as Market;
-  const labels = firstMarket.selections.map((s) => s.label);
+  const labelOf = (key: string) => {
+    for (const mk of markets) {
+      if (!mk) continue;
+      const s = mk.selections.find((s) => s.key === key);
+      if (s) return s.label;
+    }
+    return key;
+  };
+
+  const firstMarketWithLine = markets.find((mk) => mk?.line != null);
 
   return (
     <div className="rounded-lg border border-line bg-elevated/40">
       <div className="border-b border-line/60 px-3 py-2">
         <span className="font-display text-[11px] font-600 uppercase tracking-wide text-ink-muted">
           {MARKET_LABELS[marketKey] ?? marketKey}
-          {firstMarket.line != null && (
-            <span className="ml-1.5 text-cyan">· {firstMarket.line}</span>
+          {firstMarketWithLine?.line != null && (
+            <span className="ml-1.5 text-cyan">· {firstMarketWithLine.line}</span>
           )}
         </span>
       </div>
@@ -40,11 +60,11 @@ function MarketRow({
           const mk = markets[mi];
           return (
             <div key={m.id} className="space-y-1">
-              {labels.map((label) => {
-                const sel = mk?.selections.find((s) => s.label === label);
+              {allKeys.map((key) => {
+                const sel = mk?.selections.find((s) => s.key === key);
                 return (
                   <div
-                    key={label}
+                    key={key}
                     className={cn(
                       "rounded-md border px-2 py-1",
                       sel
@@ -53,7 +73,7 @@ function MarketRow({
                     )}
                   >
                     <div className="text-[9px] font-500 uppercase tracking-wide text-ink-faint">
-                      {label}
+                      {labelOf(key)}
                       {sel?.line != null && (
                         <span className="ml-0.5 text-ink-faint">
                           {sel.line > 0 ? `+${sel.line}` : sel.line}
@@ -227,7 +247,7 @@ export function ComparePanel() {
               <div
                 className="grid gap-2"
                 style={{
-                  gridTemplateColumns: `repeat(${Math.min(compareMatches.length, 3)}, 1fr)`,
+                  gridTemplateColumns: `repeat(${Math.min(compareMatches.length, 2)}, 1fr)`,
                 }}
               >
                 {compareMatches.map((m) => (
@@ -250,7 +270,7 @@ export function ComparePanel() {
 
         <footer className="shrink-0 border-t border-line bg-elevated/30 px-4 py-2 text-center">
           <span className="font-mono text-[10px] text-ink-faint">
-            最多可对比 3 场 · 数据实时更新
+            最多可对比 2 场 · 数据实时更新
           </span>
         </footer>
       </motion.div>

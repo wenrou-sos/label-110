@@ -21,7 +21,7 @@ export const HOT_TOP_N = 6;
 const NOTIFICATION_COOLDOWN_MS = 30 * 1000;
 const NOTIFICATION_PERMISSION_REQ = "default";
 const MAX_HISTORY_POINTS = 10000;
-const MAX_COMPARE_MATCHES = 3;
+const MAX_COMPARE_MATCHES = 2;
 
 function bumpChange(matchId: string): void {
   changeCounts.set(matchId, (changeCounts.get(matchId) ?? 0) + 1);
@@ -254,6 +254,10 @@ export const useOddsStore = create<OddsState>((set, get) => ({
     const next = new Set(get().comparisonIds);
     if (next.has(matchId)) {
       next.delete(matchId);
+      if (next.size === 0) {
+        set({ comparisonIds: next, isComparePanelOpen: false });
+        return;
+      }
     } else {
       if (next.size >= MAX_COMPARE_MATCHES) return;
       next.add(matchId);
