@@ -20,7 +20,7 @@ const oddsHistory = new Map<string, OddsHistoryPoint[]>();
 export const HOT_TOP_N = 6;
 const NOTIFICATION_COOLDOWN_MS = 30 * 1000;
 const NOTIFICATION_PERMISSION_REQ = "default";
-const MAX_HISTORY_POINTS = 60;
+const MAX_HISTORY_POINTS = 10000;
 
 function bumpChange(matchId: string): void {
   changeCounts.set(matchId, (changeCounts.get(matchId) ?? 0) + 1);
@@ -108,14 +108,27 @@ export const useOddsStore = create<OddsState>((set, get) => ({
     tracker.clear();
     changeCounts.clear();
     notifiedAnomalies.clear();
-    oddsHistory.clear();
     for (const m of matches) {
       for (const mk of m.markets) {
         for (const sel of mk.selections) {
           tracker.seed(m.id, mk.key, sel.key, sel.odds, now);
-          oddsHistory.set(anomalyKey(m.id, mk.key, sel.key), [
-            { odds: sel.odds, t: now },
-          ]);
+          const histKey = anomalyKey(m.id, mk.key, sel.key);
+          if (!oddsHistory.has(histKey)) {
+            const hist: OddsHistoryPoint[] = [];
+            const startTime = m.startTime;
+            if (m.status !== "scheduled" && startTime < now) {
+              const points = 30;
+              const interval = Math.max(60000, (now - startTime) / (points + 1));
+              for (let i = 1; i <= points; i++) {
+                const t = startTime + interval * i;
+                if (t >= now) break;
+                const jitter = 1 + (Math.random() - 0.5) * 0.3;
+                hist.push({ odds: sel.odds * jitter, t: Math.floor(t) });
+              }
+            }
+            hist.push({ odds: sel.odds, t: now });
+            oddsHistory.set(histKey, hist);
+          }
         }
       }
     }

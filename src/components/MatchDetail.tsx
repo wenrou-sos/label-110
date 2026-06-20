@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { X, Clock, TrendingUp, TrendingDown, Minus, ChevronDown, ChevronUp, Star, StarOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import type { Match, Market, Selection, OddsHistoryPoint } from "@/types";
+import type { Match, Market, Selection, OddsHistoryPoint, MarketKey } from "@/types";
 import { SPORT_META, MARKET_LABELS } from "@/types";
 import { useOddsStore } from "@/store/useOddsStore";
-import { formatTime, formatOdds, formatPercent, formatSignedPercent } from "@/utils/format";
+import { formatTime, formatTimeWithSeconds, formatOdds, formatSignedPercent } from "@/utils/format";
 import { TeamLogo } from "@/components/TeamLogo";
 import { DistributionBar } from "@/components/DistributionBar";
 import { Sparkline } from "@/components/Sparkline";
@@ -50,7 +50,7 @@ function OddsHistoryTimeline({
               )}
             </div>
             <span className="font-mono text-[11px] tabular-nums text-ink-muted">
-              {formatTime(p.t)}
+              {formatTimeWithSeconds(p.t)}
             </span>
             <span className="ml-auto font-mono text-[12px] font-600 tabular-nums text-ink">
               {formatOdds(p.odds)}
@@ -77,15 +77,17 @@ function SelectionDetailRow({
   marketKey,
   selection,
   isAnomaly,
+  defaultExpanded = true,
 }: {
   matchId: string;
-  marketKey: string;
+  marketKey: MarketKey;
   selection: Selection;
   isAnomaly: boolean;
+  defaultExpanded?: boolean;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(defaultExpanded);
   const history = useOddsStore((s) =>
-    s.getOddsHistory(matchId, marketKey as any, selection.key),
+    s.getOddsHistory(matchId, marketKey, selection.key),
   );
 
   const hasHistory = history.length >= 2;
@@ -124,7 +126,7 @@ function SelectionDetailRow({
           <div className="mt-0.5 flex items-center gap-1.5">
             <Clock size={10} className="text-ink-faint" />
             <span className="font-mono text-[10px] tabular-nums text-ink-faint">
-              {formatTime(selection.updatedAt)} 更新
+              {formatTimeWithSeconds(selection.updatedAt)} 更新
             </span>
           </div>
         </div>
